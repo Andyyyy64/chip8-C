@@ -14,6 +14,7 @@
 typedef struct StateChip8 {
     uint8_t memory[MEMORY_SIZE];
     uint16_t PC; // program counter
+    uint16_t I; // index register
     uint8_t V[V_REGISTER_COUNT]; // registers
     uint16_t stack[STACK_SIZE];
     uint8_t SP; // stack pointer
