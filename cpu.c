@@ -51,5 +51,35 @@ void draw(struct StateChip8 *state, uint16_t opcode, uint8_t vx, uint8_t vy) {
 }
 
 void emulate_op(struct StateChip8 *state) {
+    // fetch
+    uint16_t opcode = state->memory[state->PC];
+    opcode <<= 8;
+    opcode |= state->memory[state->PC + 1];
+    uint16_t pc_old = state->PC;
+    state->PC += 2;
+
+    // parse vx and vy
+    uint8_t vx, vy;
+    vx = (opcode & 0x0F00) >> 8;
+    vy = (opcode & 0x00F0) >> 4;
+
+    // decode the first 4 bits
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
