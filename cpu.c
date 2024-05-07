@@ -64,7 +64,20 @@ void emulate_op(struct StateChip8 *state) {
     vy = (opcode & 0x00F0) >> 4;
 
     // decode the first 4 bits
-
+    switch(opcode & 0xF000) {
+        case 0x0000:
+            switch(opcode & 0x00FF) {
+                case 0x00E0:
+                    // clear display
+                    memset(state->display, 0, DISPLAY_SIZE * sizeof(uint8_t));
+                    break;
+                case 0x00EE:
+                    state->PC = state->stack[state->SP];
+                    state->SP--;
+                    break;
+            }
+            break;
+    }
 }
 
 
