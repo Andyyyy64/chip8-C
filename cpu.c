@@ -162,8 +162,8 @@ void emulate_op(struct StateChip8 *state) {
                     break;
                 }
                 case 0x000E: {
-                    // store the lsb of vx in vf and shift vx to the left by 1
-                    uint8_t overflow = state->V[vy] & 0x1; // get the vx's lsb
+                    // store the msb of vx in vf and shift vx to the left by 1
+                    uint8_t overflow = state->V[vy] >> 7; // get the vx's msb
                     state->V[vx] <<= 1; // shift
                     state->V[0xF] = overflow;
                     break;
@@ -178,5 +178,90 @@ void emulate_op(struct StateChip8 *state) {
                 state->PC += 2;
             }
             break;
+        case 0xA000:
+            // set the index register to NNN
+            state->I = opcode & 0x0FFF;
+            break;
+        case 0xB000:
+            // jump to NNN with offset(R[0])
+            state->PC = (opcode & 0x0FFF) + state->V[0];
+        case 0xC000:
+            // generate random num and AND it with NN
+            state->V[vx] = rand() & (opcode & 0x00FF);
+            break;
+        case 0xD000:
+            draw(state,opcode, vx, vy);
+            break;
+        case 0xE000:
+            switch(opcode & 0x00FF) {
+                case 0x009E:
+                    // skip next instruction if key at vx is pressed
+                    if(state->keys[state->V[vx]]) {
+                        state->PC += 2;
+                    }
+                    break;
+                case 0x00A1:
+                    // skip next instruction if key at vy is pressed
+                    if(!(state->keys[state->V[vx]])) {
+                        state->PC += 2;
+                    }
+                    break;
+            }
+            break;
+        case 0xF000:
+            switch(opcode & 0x00FF) {
+                case 0x0007:
+                    // set vx = timer delay
+                    state->V[vx] = state->delay_timer;
+                    break;
+                case 0x0015:
+                    // set delay timer to vx
+                    state->delay_timer = state->V[vx];
+                    break;
+                case 0x0018:
+                    // set sound timer to vx
+                    state->sound_timer = state->V[vx];
+                    break;
+                case 0x000A: {
+                    // wait for a key press, store it in vx
+                    int keypress = 0;
+                    for(int i = 0; i < KEY_COUNT; i++) {
+                        if(state->keys[i] != 0) {
+                            state->V[vx] = i;
+                            keypress = 1;
+                            printf("keypressed:%i", i);
+                            break;
+                        }
+                    }
+                    if(!keypress) {
+                        state->PC -= 2;
+                    }
+                    break;
+                }
+
+                case 0x001E:
+                    // add vx to I
+                    state->I += state->V[vx];
+                    break;
+                case 0x0029:
+                    // set i to the location of sprite for the charactre in vx
+                    state->I = state->V[vx] * 5 + FONT_OFFSET;
+                    break;
+                case 0x0033:
+                    state->memory[state->I] = state->V[vx] / 100;
+                    state->memory[state->I + 1] = (state->V[vx] / 10) % 10;
+                    state->memory[state->I + 2] = (state->V[vx] % 100) % 10;
+                    break;
+                case 0x0055:
+                    for(int i = 0; i <= vx; i++) {
+                        state->memory[state->I + i] = state->V[i];
+                    }
+                    break;
+                case 0x0065:
+                    for(int i = 0; i <= vx; i++) {
+                        state->V[i] = state->memory[state->I + i];
+                    }
+                    break;
+            }
     }
 }
