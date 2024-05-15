@@ -56,10 +56,11 @@ void emulate_op(struct StateChip8 *state) {
     opcode <<= 8;
     opcode |= state->memory[state->PC + 1];
     uint16_t pc_old = state->PC;
-    state->PC += 2;
+    state->PC += 2; // add 2byte(16bit) for next instruction
 
     // parse vx and vy
     uint8_t vx, vy;
+    // get the first nibble of the opcode
     vx = (opcode & 0x0F00) >> 8;
     vy = (opcode & 0x00F0) >> 4;
 
@@ -77,22 +78,105 @@ void emulate_op(struct StateChip8 *state) {
                     break;
             }
             break;
+        case 0x1000:
+            // jump to NNN
+            state->PC = opcode & 0x0FFF;
+            break;
+        case 0x2000:
+            // call subroutine at NNN
+            state->SP++;
+            state->stack[state->SP] = state->PC;
+            state->PC = opcode & 0x0FFF;
+            break;
+        case 0x3000:
+            // skip if vx == NN
+            if(state->V[vx] == (opcode & 0x00FF)) {
+                state->PC += 2;
+            }
+            break;
+        case 0x4000:
+            // skip if vx != NN
+            if(state->V[vx] != (opcode & 0x00FF)) {
+                state->PC += 2;
+            }
+            break;
+        case 0x5000:
+            // skip if vx == vy
+            if(state->V[vx] == state->V[vy]) {
+                state->PC += 2;
+            }
+            break;
+        case 0x6000:
+            state->V[vx] = opcode & 0x00FF; // set the register vx to NN
+            break;
+        case 0x7000:
+            state->V[vx] += opcode & 0x00FF; // add the NN to register vx
+            break;
+        case 0x8000: // Logical and arithmetic instructions
+            switch(opcode & 0x000F) {
+                case 0x0000:
+                    // vx = vy
+                    state->V[vx] = state->V[vy];
+                    break;
+                case 0x0001:
+                    // vx = vx | vy
+                    state->V[vx] |= state->V[vy];
+                    break;
+                case 0x0002:
+                    // vx = vx & vy
+                    state->V[vx] &= state->V[vy];
+                    break;
+                case 0x0003:
+                    // vx = vx XOR vy
+                    state->V[vx] ^= state->V[vy];
+                    break;
+                case 0x0004: {
+                    // vx = vx + vy, vf=carry
+                    uint16_t result = state->V[vx] + state->V[vy];
+                    uint8_t overflow = result > 0xFF ? 1 : 0; // if result > 255 ? 1 : 0
+                    state->V[vx] = result & 0xFF;
+                    state->V[0xF] = overflow;
+                    break;
+                }
+                case 0x0005: {
+                    // vx = vx - vy
+                    uint8_t overflow = state->V[vx] >= state->V[vy] ? 1 : 0;
+                    state->V[vx] = state->V[vx] - state->V[vy];
+                    state->V[0xF] = overflow;
+                    break;
+                }
+
+                case 0x0006: {
+                    // store the lsb of vx in vf and shift vx to the right by 1
+                    uint8_t overflow = state->V[vy] & 0x1; // get the vx's lsb
+                    state->V[vx] >>= 1; // shift
+                    state->V[0xF] = overflow;
+                    break;
+                }
+
+                case 0x0007: {
+                    // vx = vx - vy
+                    uint8_t overflow = state->V[vy] >= state->V[vx] ? 1 : 0;
+                    state->V[vx] = state->V[vy] - state->V[vx];
+                    state->V[0xF] = overflow;
+                    break;
+                }
+                case 0x000E: {
+                    // store the lsb of vx in vf and shift vx to the left by 1
+                    uint8_t overflow = state->V[vy] & 0x1; // get the vx's lsb
+                    state->V[vx] <<= 1; // shift
+                    state->V[0xF] = overflow;
+                    break;
+                }
+                default:
+                    printf("unknown opcode [0x0000]: 0x%X\n", opcode);
+            }
+            break;
+        case 0x9000:
+            // skip if vx != vy
+            if(state->V[vx] != state->V[vy]) {
+                state->PC += 2;
+            }
+            break;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
