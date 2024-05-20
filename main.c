@@ -38,7 +38,7 @@ void update() {
 }
 
 uint8_t *read_testrom(size_t *rom_size) {
-    char *name = "roms/test.ch8";
+    char *name = "roms/demo-poo.ch8";
     FILE *file = fopen(name, "rb");
     if(!file) {
         fprintf(stderr, "Failed to open file %s\n", name);

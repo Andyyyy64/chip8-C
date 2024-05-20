@@ -1,7 +1,5 @@
-CFLAGS=-std=c17 -Wall -Wextra -Werror
 CC=gcc
-
-all:
-	$(CC) main.c -o main $(CFLAGS) `sdl2-config --cflags --libs`
+emuchip8:
+	$(CC) -o chip8 -g cpu.c font.c main.c -lSDL2
 clean:
-	rm -f main.c main.o
+	rm ./chip8
